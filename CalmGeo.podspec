@@ -22,11 +22,11 @@ Pod::Spec.new do |s|
 TODO: Add long description of the pod here.
                        DESC
 
-  s.homepage         = 'https://github.com/t2/calm-geo'
+  s.homepage         = 'https://github.com/t2tx/calm-geo'
   # s.screenshots     = 'www.example.com/screenshots_1', 'www.example.com/screenshots_2'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = { 't2' => 't2tx@icloud.com' }
-  s.source           = { :git => 'https://github.com/t2/calm-geo.git', :tag => s.version.to_s }
+  s.source           = { :git => 'https://github.com/t2tx/calm-geo.git', :tag => s.version.to_s }
   # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
 
   s.ios.deployment_target = '14.0'
