@@ -1,0 +1,11 @@
+use_frameworks!
+
+platform :ios, '14.0'
+
+target 'CalmGeo_Example' do
+  pod 'CalmGeo', :path => '../'
+
+  target 'CalmGeo_Tests' do
+    inherit! :search_paths
+  end
+end
