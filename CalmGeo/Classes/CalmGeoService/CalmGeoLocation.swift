@@ -7,8 +7,11 @@ public struct CalmGeoCoords: Codable {
     longitude = location.coordinate.longitude
     accuracy = location.horizontalAccuracy
     speed = location.speed
+    speedAccuracy = location.speedAccuracy
     heading = location.course
+    headingAccuracy = location.courseAccuracy
     altitude = location.altitude
+    altitudeAccuracy = location.verticalAccuracy
     ellipsoidalAltitude = location.altitude
     mock = location.sourceInformation?.isSimulatedBySoftware
     external = location.sourceInformation?.isProducedByAccessory
@@ -22,8 +25,11 @@ public struct CalmGeoCoords: Codable {
   public var longitude: Double
   public var accuracy: Double
   public var speed: Double
+  public var speedAccuracy: Double
   public var heading: Double
+  public var headingAccuracy: Double
   public var altitude: Double
+  public var altitudeAccuracy: Double
   public var ellipsoidalAltitude: Double
   public var floor: Double?
   public var mock: Bool?

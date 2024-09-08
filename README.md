@@ -124,8 +124,11 @@ pod 'CalmGeo'
 | longitude           | Double  | 軽度（deg）　                    |
 | accuracy            | Double  | 精度（m）                        |
 | speed               | Double  | 速度（m/s）                      |
+| speedAccuracy       | Double  | 速度精度（m/s）                  |
 | heading             | Double  | 向き（北：0.0、時計回り、deg）   |
+| headingAccuracy     | Double  | 向き精度（deg）                  |
 | altitude            | Double  | 高度（m）                        |
+| altitudeAccuracy    | Double  | 高度精度（m）                    |
 | ellipsoidalAltitude | Double  | 準拠楕円体から高さ（m）          |
 | floor               | Double? | 階数                             |
 | mock                | Bool?   | モックかどうか                   |
