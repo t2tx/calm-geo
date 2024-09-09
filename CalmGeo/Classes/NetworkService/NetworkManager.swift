@@ -14,7 +14,7 @@ final class NetworkManager: NetworkManagerProtocol {
     url: String,
     parameters: [String: Any]? = nil,
     headers: [String: String]? = nil,
-    method: RequestMethod = .GET
+    method: RequestMethod = .POST
   ) -> URLRequest? {
 
     guard let url = URL(string: url) else { return nil }
