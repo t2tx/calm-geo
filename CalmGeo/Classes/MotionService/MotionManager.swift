@@ -27,7 +27,8 @@ class MotionManager: NSObject {
 
       if let activity = activity {
         self.ref = CalmGeoActivity(
-          type: CalmGeoActivity.Activity.from(activity), confidence: activity.confidence.rawValue)
+          type: CalmGeoActivity.Activity.from(activity),
+          confidence: activity.confidence.rawValue * 33)
         self.listener?(self.ref!)
       }
     }
