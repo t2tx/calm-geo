@@ -6,8 +6,11 @@ class CalmGeoService: CalmGeoServiceType {
   private var _mmkv: MMKVManager?
   private var _locationManager: CalmGeoLocationManager?
   private var _locationListener: CalmGeoLocationListener?
+  private var _motionManager: MotionManager?
+  private var _config: CalmGeoConfigType?
 
   init(config: CalmGeoConfigType) {
+    _config = config
     restart(config: config)
   }
 
@@ -22,6 +25,12 @@ class CalmGeoService: CalmGeoServiceType {
       manager.config(config)
     } else {
       self._locationManager = CalmGeoLocationManager(config: config)
+    }
+
+    if let motionManager = _motionManager {
+      motionManager.start(nil)
+    } else {
+      self._motionManager = MotionManager()
     }
 
     start()
@@ -59,16 +68,24 @@ class CalmGeoService: CalmGeoServiceType {
   }
 
   func start() {
+    if _config?.fetchActivity == true {
+      self._motionManager?.start(nil)
+    }
+
     if let manager = self._locationManager {
 
       manager.requestWhenInUseAuthorization()
 
       manager.listenToLocation { [weak self] location in
         if let mmkv = self?._mmkv {
-          mmkv.append(location: location)
+          var work = location
+          if self?._config?.fetchActivity == true {
+            work.activity = self?._motionManager?.currentActivity ?? CalmGeoActivity.standard
+          }
+          mmkv.append(location: work)
 
           if let listener = self?._locationListener {
-            listener(location)
+            listener(work)
           }
         }
       }
@@ -78,6 +95,7 @@ class CalmGeoService: CalmGeoServiceType {
   func stop() {
     Logger.standard.info("Stop: CalmGeoService")
     self._locationManager?.stop()
+    self._motionManager?.stop()
   }
 
   func getSyncState() -> CalmGeoSyncState? {

@@ -301,7 +301,8 @@ func buildMotionChangeLocation(_ location: CLLocation, isMoving: Bool) -> CalmGe
 
   return CalmGeoLocation(
     id: UUID().uuidString, timestamp: stamp.iso8601Stamp, isMoving: isMoving,
-    coords: CalmGeoCoords(from: location), event: CalmGeoLocation.Event.motionchange)
+    coords: CalmGeoCoords(from: location), event: CalmGeoLocation.Event.motionchange
+  )
 }
 
 extension Date {
