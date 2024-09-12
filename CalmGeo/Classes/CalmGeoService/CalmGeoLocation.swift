@@ -1,4 +1,5 @@
 import CoreLocation
+import CoreMotion
 
 @available(iOS 15.0, *)
 public struct CalmGeoCoords: Codable {
@@ -37,8 +38,44 @@ public struct CalmGeoCoords: Codable {
 }
 
 @available(iOS 15.0, *)
+public struct CalmGeoActivity: Codable {
+  static var standard: CalmGeoActivity {
+    return CalmGeoActivity(type: .unknown, confidence: 0)
+  }
+
+  public enum Activity: String, Codable {
+    case still, on_foot, walking, running, in_vehicle, on_bicycle, unknown
+
+    static func from(_ activity: CMMotionActivity) -> Activity {
+      if activity.automotive {
+        return .in_vehicle
+      }
+      if activity.cycling {
+        return .on_bicycle
+      }
+      if activity.running {
+        return .running
+      }
+      if activity.stationary {
+        return .still
+      }
+      if activity.unknown {
+        return .unknown
+      }
+      if activity.walking {
+        return .walking
+      }
+      return .unknown
+    }
+  }
+
+  public var type: Activity
+  public var confidence: Int
+}
+
+@available(iOS 15.0, *)
 public struct CalmGeoLocation: Codable, Identifiable {
-  enum Event: String, Codable {
+  public enum Event: String, Codable {
     case motionchange
   }
 
@@ -47,5 +84,7 @@ public struct CalmGeoLocation: Codable, Identifiable {
   public var isMoving: Bool
   public var coords: CalmGeoCoords
 
-  var event: Event?
+  public var activity: CalmGeoActivity?
+
+  public var event: Event?
 }

@@ -32,6 +32,7 @@ public protocol CalmGeoLocationConfigType: Codable {
   var disableSpeedMultiplier: Bool { get set }
   var speedMultiplier: Double { get set }
   var stationaryRadius: Double { get set }
+  var fetchActivity: Bool { get set }
 }
 
 public protocol CalmGeoSyncConfigType: Codable {
@@ -64,7 +65,9 @@ public struct CalmGeoConfig: CalmGeoConfigType {
       autoSync: false,
       syncThreshold: 12,
       maxBatchSize: 250,
-      maxDaysToPersist: 7)
+      maxDaysToPersist: 7,
+      fetchActivity: false
+    )
   }()
 
   public var desiredAccuracy: Double
@@ -82,4 +85,6 @@ public struct CalmGeoConfig: CalmGeoConfigType {
   public var syncThreshold: Int
   public var maxBatchSize: Int
   public var maxDaysToPersist: UInt32
+
+  public var fetchActivity: Bool
 }

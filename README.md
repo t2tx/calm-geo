@@ -16,6 +16,7 @@
 ## 1. 主な特性
 
 - バックグランドで位置情報を取得する
+- 身体活動情報の取得も可能
 - iOS17 の新機能利用し、バッテリーの消費量大きく抑える
 - 静止後位置情報サービスを自動停止する
 - 速度より取得頻度の補正できる
@@ -50,6 +51,13 @@ pod 'CalmGeo'
 <string>need it</string>
 ```
 
+※ 身体活動の取得は、下記の項目も必要となる
+
+```xml
+<key>NSMotionUsageDescription</key>
+<string>need it</string>
+```
+
 ## 4. 各種設定
 
 ### 4.1 下記 I/F で設定の調整をできる
@@ -75,6 +83,7 @@ pod 'CalmGeo'
 | syncThreshold          | Int     | 自動アップロードパッケージサイズ         | `12`                                   |
 | maxBatchSize           | Int     | 1 回アップロード処理の最大位置情報記録数 | `250`                                  |
 | maxDaysToPersist       | UInt32  | ローカルで位置情報保存の最大時間(day)    | `7`                                    |
+| fetchActivity          | Bool    | 身体活動の情報も取得する                 | `false`                                |
 
 ### 4.3 精度 enum: `CalmGeoDesiredAccuracy`<br/>
 
@@ -91,30 +100,31 @@ pod 'CalmGeo'
 
 ### 5.1 `CalmGeoServiceType` の I/F 仕様
 
-| I/F                                                                      | 説明                                                       |
-| ------------------------------------------------------------------------ | ---------------------------------------------------------- |
-| start()                                                                  | 計測開始                                                   |
-| stop()                                                                   | 計測停止                                                   |
-| restart(config: `CalmGeoConfigType`)                                     | 新しい設定で計測再起動                                     |
-| clearAllLocations()                                                      | ローカルストレージをクリアする                             |
-| getGeoData() -> CalmGeoLocation?                                         | 現在地の位置情報を取得する（副作用：取得結果の保存も行う） |
-| getStoredLocations() -> [`CalmGeoLocation`]                              | ローカル保存している位置情報を取得する                     |
-| getStoredCount() -> Int                                                  | ローカル保存している位置情報数を取得する                   |
-| sync()                                                                   | （サーバー同期設定有効の場合）強制的にサーバーと同期する   |
-| registerLocationListener(\_ listener: @escaping CalmGeoLocationListener) | 位置情報更新イベントハンドラーを登録する                   |
-| unregisterLocationListener()                                             | 位置情報更新イベントハンドラー解除                         |
-| getSyncState() -> `CalmGeoSyncState?`                                    | サーバー同期状態の取得                                     |
-| state: `CalmGeoServiceState`                                             | 計測状態の取得                                             |
+| I/F                                                                         | 説明                                                       |
+| --------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| start()                                                                     | 計測開始                                                   |
+| stop()                                                                      | 計測停止                                                   |
+| restart(config: `CalmGeoConfigType`)                                        | 新しい設定で計測再起動                                     |
+| clearAllLocations()                                                         | ローカルストレージをクリアする                             |
+| getGeoData() -> CalmGeoLocation?                                            | 現在地の位置情報を取得する（副作用：取得結果の保存も行う） |
+| getStoredLocations() -> [`CalmGeoLocation`](#52-calmgeolocation-データ仕様) | ローカル保存している位置情報を取得する                     |
+| getStoredCount() -> Int                                                     | ローカル保存している位置情報数を取得する                   |
+| sync()                                                                      | （サーバー同期設定有効の場合）強制的にサーバーと同期する   |
+| registerLocationListener(\_ listener: @escaping CalmGeoLocationListener)    | 位置情報更新イベントハンドラーを登録する                   |
+| unregisterLocationListener()                                                | 位置情報更新イベントハンドラー解除                         |
+| getSyncState() -> `CalmGeoSyncState?`                                       | サーバー同期状態の取得                                     |
+| state: `CalmGeoServiceState`                                                | 計測状態の取得                                             |
 
 ### 5.2 `CalmGeoLocation` データ仕様
 
-| 項目      | 型              | 説明                         |
-| --------- | --------------- | ---------------------------- |
-| id        | String          | データ ID                    |
-| timestamp | String          | 記録時刻（ISO8601、ms まで） |
-| isMoving  | Bool            | 移動中かどうか               |
-| coords    | `CalmGeoCoords` | 位置情報                     |
-| event     | Event?          | イベント：`motionchange`     |
+| 項目      | 型                                                 | 説明                         |
+| --------- | -------------------------------------------------- | ---------------------------- |
+| id        | String                                             | データ ID                    |
+| timestamp | String                                             | 記録時刻（ISO8601、ms まで） |
+| isMoving  | Bool                                               | 移動中かどうか               |
+| coords    | [CalmGeoCoords](#53-calmgeocoordsデータ仕様)       | 位置情報                     |
+| event     | Event?                                             | イベント：`motionchange`     |
+| activity  | [CalmGeoActivity](#54-calmgeoactivity-データ仕様)? | 身体活動                     |
 
 ### 5.3 `CalmGeoCoords`　データ仕様
 
@@ -134,7 +144,14 @@ pod 'CalmGeo'
 | mock                | Bool?   | モックかどうか                   |
 | external            | Bool?   | アクセサリーから取得したかどうか |
 
-### 5.4 `CalmGeoSyncState`　データ仕様
+### 5.4 `CalmGeoActivity` データ仕様
+
+| 項目       | 型   | 説明                                                                            |
+| ---------- | ---- | ------------------------------------------------------------------------------- |
+| type       | Enum | `still \| on_foot \| walking \| running \| in_vehicle \| on_bicycle \| unknown` |
+| confidence | Int  | 信憑性                                                                          |
+
+### 5.5 `CalmGeoSyncState`　データ仕様
 
 | 項目      | 型           | 説明                   |
 | --------- | ------------ | ---------------------- |
@@ -142,7 +159,7 @@ pod 'CalmGeo'
 | tried     | Int          | リトライ回数           |
 | wait      | TimeInterval | リトライ待機時間 （s） |
 
-### 5.5 `CalmGeoServiceState` データ仕様 （Enum）
+### 5.6 `CalmGeoServiceState` データ仕様 （Enum）
 
 | 項目     | 説明   |
 | -------- | ------ |
@@ -205,6 +222,10 @@ import Foundation
 final class GeoAssembly {
   static var config: CalmGeoConfigType {
     var config = CalmGeoConfig.standard
+
+    // 身体活動も必要なら
+    // config.fetchActivity = true
+
     return config
   }
   // app singleton
