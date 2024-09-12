@@ -10,11 +10,11 @@ class CalmGeoService: CalmGeoServiceType {
   private var _config: CalmGeoConfigType?
 
   init(config: CalmGeoConfigType) {
-    _config = config
     restart(config: config)
   }
 
   func restart(config: CalmGeoConfigType) {
+    _config = config
     if let mmkv = _mmkv {
       mmkv.config = config
     } else {
@@ -27,10 +27,13 @@ class CalmGeoService: CalmGeoServiceType {
       self._locationManager = CalmGeoLocationManager(config: config)
     }
 
-    if let motionManager = _motionManager {
-      motionManager.start(nil)
+    if config.fetchActivity {
+      if _motionManager == nil {
+        self._motionManager = MotionManager()
+      }
     } else {
-      self._motionManager = MotionManager()
+      self._motionManager?.stop()
+      self._motionManager = nil
     }
 
     start()
@@ -70,6 +73,8 @@ class CalmGeoService: CalmGeoServiceType {
   func start() {
     if _config?.fetchActivity == true {
       self._motionManager?.start(nil)
+    } else {
+      self._motionManager?.stop()
     }
 
     if let manager = self._locationManager {
