@@ -160,11 +160,12 @@ class MMKVManager {
     ]
 
     guard
-      let request = NetworkManager().buildRequest(
+      var request = NetworkManager().buildRequest(
         url: url, headers: headers, method: _config.method)
     else {
       return
     }
+    request.timeoutInterval = Double(_config.httpTimeout) / 1000.0
 
     Logger.standard.info("Sync From MMKV \(self._config.syncThreshold)")
     // get all data
