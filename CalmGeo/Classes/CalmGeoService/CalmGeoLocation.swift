@@ -37,6 +37,15 @@ public struct CalmGeoCoords: Codable {
   public var external: Bool?
 }
 
+public protocol MotionActivity {
+  var automotive: Bool { get }
+  var cycling: Bool { get }
+  var running: Bool { get }
+  var stationary: Bool { get }
+  var unknown: Bool { get }
+  var walking: Bool { get }
+}
+
 @available(iOS 15.0, *)
 public struct CalmGeoActivity: Codable {
   static var standard: CalmGeoActivity {
@@ -46,7 +55,9 @@ public struct CalmGeoActivity: Codable {
   public enum Activity: String, Codable {
     case still, on_foot, walking, running, in_vehicle, on_bicycle, unknown
 
-    static func from(_ activity: CMMotionActivity) -> Activity {
+    static func from(
+      _ activity: MotionActivity
+    ) -> Activity {
       if activity.automotive {
         return .in_vehicle
       }
