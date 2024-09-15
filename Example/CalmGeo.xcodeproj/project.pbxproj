@@ -13,6 +13,9 @@
 		607FACDD1AFB9204008FA782 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDC1AFB9204008FA782 /* Images.xcassets */; };
 		607FACE01AFB9204008FA782 /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 607FACDE1AFB9204008FA782 /* LaunchScreen.xib */; };
 		607FACEC1AFB9204008FA782 /* Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACEB1AFB9204008FA782 /* Tests.swift */; };
+		908596192C95BE20009BEE84 /* CalmGeoConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 908596182C95BE20009BEE84 /* CalmGeoConfigTests.swift */; };
+		9085961B2C95C19C009BEE84 /* CalmGeoLocationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9085961A2C95C19C009BEE84 /* CalmGeoLocationTests.swift */; };
+		9085961F2C96707A009BEE84 /* NetworkManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9085961E2C96707A009BEE84 /* NetworkManagerTests.swift */; };
 		90C092032C846A6C004E9147 /* RootApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90C091ED2C846A6C004E9147 /* RootApp.swift */; };
 		90C092042C846A6C004E9147 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90C091EE2C846A6C004E9147 /* RootView.swift */; };
 		90C092052C846A6C004E9147 /* LocationModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90C091EF2C846A6C004E9147 /* LocationModel.swift */; };
@@ -56,6 +59,9 @@
 		607FACEB1AFB9204008FA782 /* Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests.swift; sourceTree = "<group>"; };
 		61C8B05920EE5ACF6614F2BB /* Pods_CalmGeo_Example.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_CalmGeo_Example.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		8A272E19D2810A839E7FE3F2 /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
+		908596182C95BE20009BEE84 /* CalmGeoConfigTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CalmGeoConfigTests.swift; sourceTree = "<group>"; };
+		9085961A2C95C19C009BEE84 /* CalmGeoLocationTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CalmGeoLocationTests.swift; sourceTree = "<group>"; };
+		9085961E2C96707A009BEE84 /* NetworkManagerTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkManagerTests.swift; sourceTree = "<group>"; };
 		90C091ED2C846A6C004E9147 /* RootApp.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RootApp.swift; sourceTree = "<group>"; };
 		90C091EE2C846A6C004E9147 /* RootView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		90C091EF2C846A6C004E9147 /* LocationModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LocationModel.swift; sourceTree = "<group>"; };
@@ -145,6 +151,9 @@
 		607FACE81AFB9204008FA782 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				9085961E2C96707A009BEE84 /* NetworkManagerTests.swift */,
+				9085961A2C95C19C009BEE84 /* CalmGeoLocationTests.swift */,
+				908596182C95BE20009BEE84 /* CalmGeoConfigTests.swift */,
 				607FACEB1AFB9204008FA782 /* Tests.swift */,
 				607FACE91AFB9204008FA782 /* Supporting Files */,
 			);
@@ -456,6 +465,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9085961F2C96707A009BEE84 /* NetworkManagerTests.swift in Sources */,
+				9085961B2C95C19C009BEE84 /* CalmGeoLocationTests.swift in Sources */,
+				908596192C95BE20009BEE84 /* CalmGeoConfigTests.swift in Sources */,
 				607FACEC1AFB9204008FA782 /* Tests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

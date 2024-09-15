@@ -55,6 +55,10 @@ struct SettingScreen: View {
           }
         }
 
+        Section("身体活動関連") {
+          Toggle("身体活動の取得", isOn: $model.config.fetchActivity)
+        }
+
         Section("休止・再開関連") {
           Picker("再開移動距離", selection: $model.config.stationaryRadius) {
             ForEach(StationaryRadius.indices, id: \.self) {

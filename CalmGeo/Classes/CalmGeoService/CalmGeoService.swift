@@ -18,7 +18,7 @@ class CalmGeoService: CalmGeoServiceType {
     if let mmkv = _mmkv {
       mmkv.config = config
     } else {
-      self._mmkv = MMKVManager(id: "calmgeo", config: config)
+      self._mmkv = MMKVManager(id: "calmgeo", config: config, network: NetworkManager())
     }
 
     if let manager = _locationManager {
