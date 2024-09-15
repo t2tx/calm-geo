@@ -13,11 +13,14 @@ struct LatestFail {
 @available(iOS 15.0, *)
 class MMKVManager {
   private var _mmkv: MMKV?
+  private var _network: NetworkManagerProtocol
 
   private var _latestFail: LatestFail
   private var _config: CalmGeoSyncConfigType
 
-  init(id: String, config: CalmGeoSyncConfigType) {
+  init(id: String, config: CalmGeoSyncConfigType, network: NetworkManagerProtocol) {
+    self._network = network
+
     _latestFail = LatestFail(timestamp: Date.now, tried: 0)
 
     MMKV.initialize(rootDir: nil, logLevel: .warning)
@@ -68,6 +71,11 @@ class MMKVManager {
       return false
     }
 
+    if location.event != nil {
+      // event 発生時は即時送信
+      return true
+    }
+
     let interval = _latestFail.timestamp.timeIntervalSinceNow
     let wait = _latestFail.wait
 
@@ -77,7 +85,7 @@ class MMKVManager {
       return false
     }
 
-    return mmkv.count() >= max(1, _config.syncThreshold) || location.event != nil
+    return mmkv.count() >= max(1, _config.syncThreshold)
   }
 
   func remove(key: String) {
@@ -111,40 +119,27 @@ class MMKVManager {
     _mmkv?.clearAll()
   }
 
-  func hanldUploadError() {
+  func handleUploadError() {
     _latestFail.timestamp = Date.now
     _latestFail.tried += 1
   }
 
   func syncTrunk(chunk: [CalmGeoLocation], request: URLRequest) {
     // upload
-    do {
-      let data = try JSONEncoder().encode(chunk)
-      let task = URLSession.shared.uploadTask(with: request, from: data) {
-        [weak self] data, response, error in
-        if let error = error {
-          Logger.standard.error("\(error.localizedDescription)")
-          self?.hanldUploadError()
-        } else {
-          if let res = response as? HTTPURLResponse {
-            if res.statusCode == 200 {
-              // remove local
-              self?._mmkv?.removeValues(
-                forKeys: chunk.map({ location in
-                  location.id
-                }))
-              self?._latestFail.tried = 0
-              Logger.standard.info("Remove Chunk \(chunk.count)")
-              return
-            }
-            Logger.standard.error("RESPONSE: \(res.statusCode)")
-          }
-          self?.hanldUploadError()
-        }
+    let _ = _network.upload(request: request, from: chunk) {
+      [weak self] result in
+      switch result {
+      case .success():
+        // remove local
+        self?._mmkv?.removeValues(
+          forKeys: chunk.map({ location in
+            location.id
+          }))
+        self?._latestFail.tried = 0
+      case .failure(let error):
+        Logger.standard.error("\(error.localizedDescription)")
+        self?.handleUploadError()
       }
-      task.resume()
-    } catch {
-      Logger.standard.info("Sync Error: \(error)")
     }
   }
 
@@ -160,7 +155,7 @@ class MMKVManager {
     ]
 
     guard
-      var request = NetworkManager().buildRequest(
+      var request = _network.buildRequest(
         url: url, headers: headers, method: _config.method)
     else {
       return
