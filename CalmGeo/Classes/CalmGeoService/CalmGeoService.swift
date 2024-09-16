@@ -19,11 +19,13 @@ class CalmGeoService: CalmGeoServiceType {
       _storage.config = config
     } else {
       MMKV.initialize(rootDir: nil, logLevel: .warning)
-      var mmkv = MMKV.init(mmapID: "calmgeo", mode: .singleProcess)
-      
+      let mmkv = MMKV.init(mmapID: "calmgeo", mode: .singleProcess)
+
       if let mmkv {
         mmkv.enableAutoKeyExpire(expiredInSeconds: MMKVExpireDuration.never.rawValue)
-        _storage = StoreManager(config: config,  network: NetworkManager(), storage: MMKVStorageProvider(of: mmkv, config: config))
+        _storage = StoreManager(
+          config: config, network: NetworkManager(),
+          storage: MMKVStorageProvider(of: mmkv, config: config))
       }
     }
 
@@ -35,7 +37,7 @@ class CalmGeoService: CalmGeoServiceType {
 
     if config.fetchActivity {
       if _motionManager == nil {
-        self._motionManager = MotionManager()
+        self._motionManager = MotionManager(provider: MotionProvider())
       }
     } else {
       self._motionManager?.stop()
