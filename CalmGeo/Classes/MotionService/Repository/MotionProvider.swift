@@ -22,7 +22,18 @@ class MotionProvider: MotionProviderProtocol {
       guard let self = self else { return }
 
       if let activity = activity {
-        self.ref = CalmGeoActivity.from(activity as! MotionActivityType)
+        self.ref = CalmGeoActivity.from(
+          CalmMotionActivity(
+            automotive: activity.automotive,
+            cycling: activity.cycling,
+            running: activity.running,
+            stationary: activity.stationary,
+            unknown: activity.unknown,
+            walking: activity.walking,
+            confidence: activity.confidence
+          )
+        )
+
         self.listener?(self.ref!)
       }
     }
