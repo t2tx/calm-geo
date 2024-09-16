@@ -3,7 +3,7 @@ import Foundation
 import os
 
 @available(iOS 17.0, *)
-class MonitorProvider: MonitorProviderProtocol {
+class StillMonitorProvider: StillMonitorProviderProtocol {
   private var watchTask: Task<Void, Error>?
   private var monitor: CLMonitor
 
@@ -14,6 +14,8 @@ class MonitorProvider: MonitorProviderProtocol {
     self.monitor = monitor
   }
 
+  var isRunning: Bool { watchTask != nil }
+  
   func start(base: CalmGeoCoords, handler: @escaping MovingHandler) throws {
     self.watchTask?.cancel()
     self.watchTask = Task {

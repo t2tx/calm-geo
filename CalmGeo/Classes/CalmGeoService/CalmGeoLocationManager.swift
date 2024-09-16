@@ -16,17 +16,16 @@ class CalmGeoLocationManager: NSObject, CLLocationManagerDelegate {
   private var updateTask: Task<Void, Error>?
   private var updateStamp: Date = Date()
 
-  private var watchTask: Task<Void, Error>?
-
-  private var monitor: CLMonitor?
+  private var monitor: StillMonitorProviderProtocol?
 
   private var refLoca: CLLocation?
   private var isMoving: Bool = false
   private var listener: Listener?
 
-  private var config: CalmGeoLocationConfigType?
+  private var config: CalmGeoLocationConfigType
 
   init(config: CalmGeoLocationConfigType) {
+    self.config = config
     super.init()
     self.config(config)
 
@@ -34,7 +33,7 @@ class CalmGeoLocationManager: NSObject, CLLocationManagerDelegate {
   }
 
   var isRunning: Bool {
-    return updateTask != nil || watchTask != nil
+    return updateTask != nil || (monitor?.isRunning ?? false)
   }
 
   func config(_ config: CalmGeoLocationConfigType) {
@@ -85,40 +84,25 @@ class CalmGeoLocationManager: NSObject, CLLocationManagerDelegate {
   }
 
   func monitorDistance() {
-    self.watchTask?.cancel()
-    self.watchTask = Task {
-      print("Set up monitor")
-
-      do {
-        await monitor!.add(
-          getCircularGeographicCondition(), identifier: "refLoca", assuming: .satisfied)
-
-        for try await event in await monitor!.events {
-          if self.updateTask != nil {
-            break
-          }
-
-          if event.state == .unsatisfied || event.state == .unknown {
-            Logger.standard.info(
-              "MonitorDistance: out \(event.state.rawValue) \(Date().ISO8601Format())")
-            await monitor!.remove("refLoca")
-
-            if let location = manager.location, let listener = listener {
-              // start move
-              Logger.standard.info("motionchange: Moving")
-              isMoving = true
-              listener(
-                buildMotionChangeLocation(location, isMoving: true))
-            }
-            self.switchToListen()
-          }
+    self.monitor?.stop()
+    
+    do {
+      try monitor!.start(base: CalmGeoCoords(from: self.refLoca ?? CLLocation())) {
+        if let location = self.manager.location, let listener = self.listener {
+          // start move
+          Logger.standard.info("motionchange: Moving")
+          self.isMoving = true
+          listener(
+            buildMotionChangeLocation(location, isMoving: true))
         }
-      } catch {
-        Logger.standard.info("Some error")
-        debugPrint("Some Error Occured")
+        self.switchToListen()
       }
+    } catch {
+      Logger.standard.info("Some error")
+      debugPrint("Some Error Occured")
     }
   }
+  
 
   @available(iOS 17.0, *)
   func startLiveUpdates(_ listener: @escaping (_ location: CalmGeoLocation) -> Void)
@@ -132,14 +116,14 @@ class CalmGeoLocationManager: NSObject, CLLocationManagerDelegate {
         return true
       }
 
-      if self.watchTask != nil {
+      if self.monitor?.isRunning ?? false {
         return true
       }
 
       if let loca = update.location {
         let distance = loca.distance(from: refLoca)
 
-        let config = self.config!
+        let config = self.config
         let judge =
           config.disableSpeedMultiplier
           ? Double(config.distanceFilter)
@@ -192,7 +176,8 @@ class CalmGeoLocationManager: NSObject, CLLocationManagerDelegate {
     self.updateTask = Task {
       do {
         if self.monitor == nil {
-          self.monitor = await CLMonitor(UUID().uuidString.split(separator: "-").joined())
+          let inner = await CLMonitor(UUID().uuidString.split(separator: "-").joined())
+          monitor = StillMonitorProvider(config:config, monitor: inner)
         }
 
         self.updateStamp = Date()
@@ -201,7 +186,7 @@ class CalmGeoLocationManager: NSObject, CLLocationManagerDelegate {
         Logger.standard.info("updated")
 
         for try await update in updates {
-          if self.watchTask != nil {
+          if self.monitor?.isRunning ?? false {
             break
           }
 
@@ -232,9 +217,8 @@ class CalmGeoLocationManager: NSObject, CLLocationManagerDelegate {
 
   func stopWatch() {
     Logger.standard.info("Stop Watch \(Date().ISO8601Format())")
-    if let _ = self.watchTask {
-      self.watchTask = nil
-    }
+    self.monitor?.stop()
+    self.monitor = nil
   }
 
   func switchToListen() {
@@ -269,20 +253,7 @@ class CalmGeoLocationManager: NSObject, CLLocationManagerDelegate {
     self.updateTask?.cancel()
     self.updateTask = nil
 
-    self.watchTask?.cancel()
-    self.watchTask = nil
-  }
-
-  func getCircularGeographicCondition() -> CLMonitor.CircularGeographicCondition {
-    let center = refLoca?.coordinate ?? CLLocationCoordinate2D()
-
-    let result = CLMonitor.CircularGeographicCondition(
-      center: center,
-      radius: self.config!.stationaryRadius)
-
-    Logger.standard.info("Circlular: \(center.latitude) \(center.longitude)")
-
-    return result
+    stopWatch()
   }
 }
 
