@@ -1,5 +1,4 @@
 import CoreLocation
-import MMKV
 
 struct LatestFail {
   var timestamp: Date
@@ -11,21 +10,20 @@ struct LatestFail {
 }
 
 @available(iOS 15.0, *)
-class MMKVManager {
-  private var _mmkv: MMKV?
+class StoreManager {
+  private var _storage: StorageProviderProtocol
   private var _network: NetworkManagerProtocol
 
   private var _latestFail: LatestFail
   private var _config: CalmGeoSyncConfigType
 
-  init(id: String, config: CalmGeoSyncConfigType, network: NetworkManagerProtocol) {
+  init(
+    config: CalmGeoSyncConfigType, network: NetworkManagerProtocol, storage: StorageProviderProtocol
+  ) {
     self._network = network
+    self._storage = storage
 
     _latestFail = LatestFail(timestamp: Date.now, tried: 0)
-
-    MMKV.initialize(rootDir: nil, logLevel: .warning)
-    self._mmkv = MMKV.init(mmapID: id, mode: .singleProcess)
-    self._mmkv?.enableAutoKeyExpire(expiredInSeconds: MMKVExpireDuration.never.rawValue)
 
     self._config = config
   }
@@ -40,21 +38,14 @@ class MMKVManager {
   }
 
   func append(location: CalmGeoLocation) {
-    if let mmkv = self._mmkv {
-      let encoder = JSONEncoder()
-      do {
-        let data = try encoder.encode(location)
-        mmkv.set(
-          data, forKey: location.id,
-          expireDuration: _config.maxDaysToPersist * 24 * 60 * 60)
+    do {
+      try _storage.append(location: location)
 
-        if needSync(location: location) {
-          sync()
-        }
-
-      } catch {
-        Logger.standard.error("\(error.localizedDescription)")
+      if needSync(location: location) {
+        sync()
       }
+    } catch {
+      Logger.standard.error("\(error.localizedDescription)")
     }
   }
 
@@ -64,10 +55,6 @@ class MMKVManager {
     }
 
     guard let _ = _config.url else {
-      return false
-    }
-
-    guard let mmkv = _mmkv else {
       return false
     }
 
@@ -85,38 +72,24 @@ class MMKVManager {
       return false
     }
 
-    return mmkv.count() >= max(1, _config.syncThreshold)
+    return _storage.count() >= max(1, _config.syncThreshold)
   }
 
   func remove(key: String) {
-    _mmkv?.removeValue(forKey: key)
+    _storage.remove(key: key)
   }
 
   func count() -> Int {
-    return _mmkv?.allKeys().count ?? 0
+    return _storage.count()
   }
 
   func getAllData() -> [CalmGeoLocation] {
-    guard let mmkv = _mmkv else {
-      return []
-    }
-
-    var result: [CalmGeoLocation] = []
-    for key in mmkv.allKeys() {
-      let data = mmkv.data(forKey: key as! String)
-      let decoder = JSONDecoder()
-      do {
-        let location = try decoder.decode(CalmGeoLocation.self, from: data!)
-        result.append(location)
-      } catch {
-        Logger.standard.error("\(error.localizedDescription)")
-      }
-    }
-    return result.sorted(by: { $0.timestamp < $1.timestamp })
+    let raw = _storage.getAllData()
+    return raw.sorted(by: { $0.timestamp < $1.timestamp })
   }
 
   func clearAll() {
-    _mmkv?.clearAll()
+    _storage.clearAll()
   }
 
   func handleUploadError() {
@@ -131,8 +104,8 @@ class MMKVManager {
       switch result {
       case .success():
         // remove local
-        self?._mmkv?.removeValues(
-          forKeys: chunk.map({ location in
+        self?._storage.removeValues(
+          keys: chunk.map({ location in
             location.id
           }))
         self?._latestFail.tried = 0

@@ -46,8 +46,30 @@ public protocol MotionActivity {
   var walking: Bool { get }
 }
 
+public protocol MotionActivityType: MotionActivity {
+  var confidence: CMMotionActivityConfidence { get }
+}
+
+public struct CalmMotionActivity: MotionActivityType {
+  public var automotive: Bool = false
+  public var cycling: Bool = false
+  public var running: Bool = false
+  public var stationary: Bool = false
+  public var unknown: Bool = false
+  public var walking: Bool = false
+
+  public var confidence: CMMotionActivityConfidence = .low
+}
+
 @available(iOS 15.0, *)
 public struct CalmGeoActivity: Codable {
+  static func from(_ activity: MotionActivityType) -> CalmGeoActivity {
+    return CalmGeoActivity(
+      type: Activity.from(activity),
+      confidence: Int(
+        (Double(activity.confidence.rawValue + 1) * 33.3).rounded(.toNearestOrAwayFromZero)))
+  }
+
   static var standard: CalmGeoActivity {
     return CalmGeoActivity(type: .unknown, confidence: 0)
   }

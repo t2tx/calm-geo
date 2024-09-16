@@ -3,7 +3,7 @@ import MMKV
 
 @available(iOS 17.0, *)
 class CalmGeoService: CalmGeoServiceType {
-  private var _mmkv: MMKVManager?
+  private var _storage: StoreManager?
   private var _locationManager: CalmGeoLocationManager?
   private var _locationListener: CalmGeoLocationListener?
   private var _motionManager: MotionManager?
@@ -15,10 +15,18 @@ class CalmGeoService: CalmGeoServiceType {
 
   func restart(config: CalmGeoConfigType) {
     _config = config
-    if let mmkv = _mmkv {
-      mmkv.config = config
+    if let _storage {
+      _storage.config = config
     } else {
-      self._mmkv = MMKVManager(id: "calmgeo", config: config, network: NetworkManager())
+      MMKV.initialize(rootDir: nil, logLevel: .warning)
+      let mmkv = MMKV.init(mmapID: "calmgeo", mode: .singleProcess)
+
+      if let mmkv {
+        mmkv.enableAutoKeyExpire(expiredInSeconds: MMKVExpireDuration.never.rawValue)
+        _storage = StoreManager(
+          config: config, network: NetworkManager(),
+          storage: MMKVStorageProvider(of: mmkv, config: config))
+      }
     }
 
     if let manager = _locationManager {
@@ -29,7 +37,7 @@ class CalmGeoService: CalmGeoServiceType {
 
     if config.fetchActivity {
       if _motionManager == nil {
-        self._motionManager = MotionManager()
+        self._motionManager = MotionManager(provider: MotionProvider())
       }
     } else {
       self._motionManager?.stop()
@@ -44,22 +52,22 @@ class CalmGeoService: CalmGeoServiceType {
   }
 
   func getStoredLocations() -> [CalmGeoLocation] {
-    guard let mmkv = _mmkv else {
+    guard let _storage else {
       return []
     }
-    return mmkv.getAllData()
+    return _storage.getAllData()
   }
 
   func clearAllLocations() {
-    _mmkv?.clearAll()
+    _storage?.clearAll()
   }
 
   func getStoredCount() -> Int {
-    return _mmkv?.count() ?? 0
+    return _storage?.count() ?? 0
   }
 
   func sync() {
-    _mmkv?.sync()
+    _storage?.sync()
   }
 
   func registerLocationListener(_ listener: @escaping CalmGeoLocationListener) {
@@ -82,12 +90,12 @@ class CalmGeoService: CalmGeoServiceType {
       manager.requestWhenInUseAuthorization()
 
       manager.listenToLocation { [weak self] location in
-        if let mmkv = self?._mmkv {
+        if let storage = self?._storage {
           var work = location
           if self?._config?.fetchActivity == true {
             work.activity = self?._motionManager?.currentActivity ?? CalmGeoActivity.standard
           }
-          mmkv.append(location: work)
+          storage.append(location: work)
 
           if let listener = self?._locationListener {
             listener(work)
@@ -104,7 +112,7 @@ class CalmGeoService: CalmGeoServiceType {
   }
 
   func getSyncState() -> CalmGeoSyncState? {
-    guard let inner = _mmkv?.syncState else {
+    guard let inner = _storage?.syncState else {
       return nil
     }
 

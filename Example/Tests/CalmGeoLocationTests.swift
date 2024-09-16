@@ -12,6 +12,17 @@ struct MockMotionActivity: MotionActivity {
   var walking: Bool = false
 }
 
+struct MockMotionActivityType: MotionActivityType {
+  var automotive: Bool = false
+  var cycling: Bool = false
+  var running: Bool = false
+  var stationary: Bool = false
+  var unknown: Bool = false
+  var walking: Bool = false
+
+  var confidence: CMMotionActivityConfidence
+}
+
 final class CalmGeoLocationTests: XCTestCase {
   func testActivity() {
     var motion = MockMotionActivity(
@@ -43,5 +54,23 @@ final class CalmGeoLocationTests: XCTestCase {
 
     motion.walking = false
     XCTAssertEqual(CalmGeoActivity.Activity.from(motion), .unknown)
+  }
+
+  func testActivityType() {
+    var motion = MockMotionActivityType(
+
+      automotive: true, cycling: false, running: false, stationary: false, unknown: false,
+      walking: false,
+      confidence: .low)
+
+    XCTAssertEqual(CalmGeoActivity.from(motion).type, .in_vehicle)
+
+    XCTAssertEqual(CalmGeoActivity.from(motion).confidence, 33)
+
+    motion.confidence = .medium
+    XCTAssertEqual(CalmGeoActivity.from(motion).confidence, 67)
+
+    motion.confidence = .high
+    XCTAssertEqual(CalmGeoActivity.from(motion).confidence, 100)
   }
 }
