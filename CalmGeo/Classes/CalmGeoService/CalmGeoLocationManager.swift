@@ -11,7 +11,6 @@ typealias Listener = (_ location: CalmGeoLocation) -> Void
 @available(iOS 17.0, *)
 class CalmGeoLocationManager: NSObject, CLLocationManagerDelegate {
   private var manager: CLLocationManager = CLLocationManager()
-  private var backgroundActivity: CLBackgroundActivitySession?
 
   private var updateTask: Task<Void, Error>?
   private var updateStamp: Date = Date()
@@ -28,8 +27,6 @@ class CalmGeoLocationManager: NSObject, CLLocationManagerDelegate {
     self.config = config
     super.init()
     self.config(config)
-
-    backgroundActivity = CLBackgroundActivitySession()
   }
 
   var isRunning: Bool {

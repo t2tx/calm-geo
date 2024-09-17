@@ -4,12 +4,16 @@ import MMKV
 @available(iOS 17.0, *)
 class CalmGeoService: CalmGeoServiceType {
   private var _storage: StoreManager?
+  private var _backgroundSession: BackgroundSessionProtocol?
+  private var _motionManager: MotionManager?
+  
   private var _locationManager: CalmGeoLocationManager?
   private var _locationListener: CalmGeoLocationListener?
-  private var _motionManager: MotionManager?
+
   private var _config: CalmGeoConfigType?
 
   init(config: CalmGeoConfigType) {
+    _backgroundSession = BackgroundSession()
     restart(config: config)
   }
 
