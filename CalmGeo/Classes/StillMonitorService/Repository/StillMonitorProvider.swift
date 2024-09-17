@@ -7,22 +7,20 @@ class StillMonitorProvider: StillMonitorProviderProtocol {
   private var watchTask: Task<Void, Error>?
   private var monitor: CLMonitor
 
-  private var config: CalmGeoLocationConfigType?
-
-  init(config: CalmGeoLocationConfigType, monitor: CLMonitor) {
-    self.config = config
+  init(monitor: CLMonitor) {
     self.monitor = monitor
   }
 
   var isRunning: Bool { watchTask != nil }
-  
-  func start(base: CalmGeoCoords, handler: @escaping MovingHandler) throws {
+
+  func start(base: CalmGeoCoords, radius: Double, handler: @escaping MovingHandler) throws {
     self.watchTask?.cancel()
     self.watchTask = Task {
       print("Set up monitor")
 
       await monitor.add(
-        getCircularGeographicCondition(base: base), identifier: "refLoca", assuming: .satisfied)
+        getCircularGeographicCondition(base: base, radius: radius), identifier: "refLoca",
+        assuming: .satisfied)
 
       for try await event in await monitor.events {
         if event.state == .unsatisfied || event.state == .unknown {
@@ -42,7 +40,7 @@ class StillMonitorProvider: StillMonitorProviderProtocol {
     watchTask = nil
   }
 
-  func getCircularGeographicCondition(base: CalmGeoCoords)
+  func getCircularGeographicCondition(base: CalmGeoCoords, radius: Double)
     -> CLMonitor.CircularGeographicCondition
   {
     let center = CLLocationCoordinate2D(
@@ -50,7 +48,7 @@ class StillMonitorProvider: StillMonitorProviderProtocol {
 
     let result = CLMonitor.CircularGeographicCondition(
       center: center,
-      radius: self.config!.stationaryRadius)
+      radius: radius)
 
     Logger.standard.info("Circlular: \(center.latitude) \(center.longitude)")
 

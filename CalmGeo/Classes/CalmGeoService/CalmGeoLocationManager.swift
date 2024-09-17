@@ -85,9 +85,11 @@ class CalmGeoLocationManager: NSObject, CLLocationManagerDelegate {
 
   func monitorDistance() {
     self.monitor?.stop()
-    
+
     do {
-      try monitor!.start(base: CalmGeoCoords(from: self.refLoca ?? CLLocation())) {
+      try monitor!.start(
+        base: CalmGeoCoords(from: self.refLoca ?? CLLocation()), radius: config.stationaryRadius
+      ) {
         if let location = self.manager.location, let listener = self.listener {
           // start move
           Logger.standard.info("motionchange: Moving")
@@ -102,7 +104,6 @@ class CalmGeoLocationManager: NSObject, CLLocationManagerDelegate {
       debugPrint("Some Error Occured")
     }
   }
-  
 
   @available(iOS 17.0, *)
   func startLiveUpdates(_ listener: @escaping (_ location: CalmGeoLocation) -> Void)
@@ -177,7 +178,7 @@ class CalmGeoLocationManager: NSObject, CLLocationManagerDelegate {
       do {
         if self.monitor == nil {
           let inner = await CLMonitor(UUID().uuidString.split(separator: "-").joined())
-          monitor = StillMonitorProvider(config:config, monitor: inner)
+          monitor = StillMonitorProvider(monitor: inner)
         }
 
         self.updateStamp = Date()
