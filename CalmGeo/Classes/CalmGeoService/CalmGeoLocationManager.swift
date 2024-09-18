@@ -10,41 +10,39 @@ typealias Listener = (_ location: CalmGeoLocation) -> Void
 
 @available(iOS 17.0, *)
 class CalmGeoLocationManager: NSObject, CLLocationManagerDelegate {
-  private var manager: CLLocationManager = CLLocationManager()
-
-  private var updateTask: Task<Void, Error>?
   private var updateStamp: Date = Date()
 
-  private var monitor: StillMonitorProviderProtocol?
+  private var monitor: StillMonitorProviderProtocol
+  private var location: LocationProviderProtocol
 
-  private var refLoca: CLLocation?
+  private var refLoca: CalmGeoCoords?
   private var isMoving: Bool = false
   private var listener: Listener?
 
   private var config: CalmGeoLocationConfigType
 
-  init(config: CalmGeoLocationConfigType) {
+  init(
+    config: CalmGeoLocationConfigType, monitor: StillMonitorProviderProtocol,
+    location: LocationProviderProtocol
+  ) {
+    self.monitor = monitor
+    self.location = location
     self.config = config
     super.init()
     self.config(config)
   }
 
   var isRunning: Bool {
-    return updateTask != nil || (monitor?.isRunning ?? false)
+    return location.isRunning || monitor.isRunning
   }
 
   func config(_ config: CalmGeoLocationConfigType) {
     self.config = config
-
-    self.manager.delegate = self
-    manager.desiredAccuracy = config.desiredAccuracy
-    manager.activityType = .otherNavigation
-    manager.pausesLocationUpdatesAutomatically = true
-    manager.allowsBackgroundLocationUpdates = true
+    self.location.config(config)
   }
 
   var currentLocation: CalmGeoLocation? {
-    if let location = manager.location {
+    if let location = location.currentLocation {
       let loca = buildMovingLocation(location)
       if let listener {
         listener(loca)
@@ -55,39 +53,17 @@ class CalmGeoLocationManager: NSObject, CLLocationManagerDelegate {
   }
 
   func requestWhenInUseAuthorization() {
-    manager.requestWhenInUseAuthorization()
-  }
-
-  func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-    Logger.standard.info("Auth")
-
-    switch manager.authorizationStatus {
-    case .notDetermined, .authorizedWhenInUse:
-      manager.requestAlwaysAuthorization()
-    default:
-      break
-    }
-  }
-
-  func requestAlwaysAuthorization() {
-    let state = manager.authorizationStatus
-    if state == .authorizedAlways {
-      return
-    } else if state == .notDetermined || state == .authorizedWhenInUse {
-      manager.requestAlwaysAuthorization()
-    } else {
-      fatalError("Not authenticated")
-    }
+    location.requestAuthorization()
   }
 
   func monitorDistance() {
-    self.monitor?.stop()
+    self.monitor.stop()
 
     do {
-      try monitor!.start(
-        base: CalmGeoCoords(from: self.refLoca ?? CLLocation()), radius: config.stationaryRadius
+      try monitor.start(
+        base: self.refLoca ?? CalmGeoCoords(from: CLLocation()), radius: config.stationaryRadius
       ) {
-        if let location = self.manager.location, let listener = self.listener {
+        if let location = self.location.currentLocation, let listener = self.listener {
           // start move
           Logger.standard.info("motionchange: Moving")
           self.isMoving = true
@@ -102,121 +78,101 @@ class CalmGeoLocationManager: NSObject, CLLocationManagerDelegate {
     }
   }
 
-  @available(iOS 17.0, *)
-  func startLiveUpdates(_ listener: @escaping (_ location: CalmGeoLocation) -> Void)
-    -> AsyncFilterSequence<CLLocationUpdate.Updates>
-  {
-    return CLLocationUpdate.liveUpdates(.otherNavigation).filter {
-      [weak self] update in
-      guard let self = self else { return false }
-      guard let refLoca = self.refLoca else {
-        self.refLoca = update.location
+  func filterLocation(_ location: CalmGeoCoords?) -> Bool {
+    guard let refLoca = self.refLoca else {
+      self.refLoca = location
+      return true
+    }
+
+    if self.monitor.isRunning {
+      return true
+    }
+
+    if let location {
+      let distance = location.distance(from: refLoca)
+
+      let config = self.config
+      let judge =
+        config.disableSpeedMultiplier
+        ? Double(config.distanceFilter)
+        : max(
+          (round(location.speed / 5.0)) * config.speedMultiplier
+            * Double(config.distanceFilter), Double(config.distanceFilter))
+
+      Logger.standard.info(
+        "Distance: \(judge) \(distance) \(location.timestamp?.ISO8601Format() ?? "")")
+
+      if distance > judge {
+        self.refLoca = location
         return true
       }
 
-      if self.monitor?.isRunning ?? false {
-        return true
-      }
-
-      if let loca = update.location {
-        let distance = loca.distance(from: refLoca)
-
-        let config = self.config
-        let judge =
-          config.disableSpeedMultiplier
-          ? Double(config.distanceFilter)
-          : max(
-            (round(loca.speed / 5.0)) * config.speedMultiplier
-              * Double(config.distanceFilter), Double(config.distanceFilter))
-
-        Logger.standard.info("Distance: \(judge) \(distance) \(loca.timestamp.ISO8601Format())")
-
-        if distance > judge {
-          self.refLoca = update.location
-          return true
-        }
-
-        if let diff = self.refLoca?.timestamp.timeIntervalSinceNow {
-          if abs(diff) > TIME_TO_STILL && isMoving {
-            self.refLoca = loca
-            if distance < Double(config.distanceFilter) {
-              Logger.standard.info("motionchange: Still")
-              listener(
-                buildMotionChangeLocation(loca, isMoving: false))
-              isMoving = false
-            }
-          }
-
-          let diffPast = abs(self.updateStamp.timeIntervalSinceNow)
-          if abs(diff) > TIME_TO_SLEEP && diffPast > TIME_TO_SLEEP {
-            if isMoving {
-              Logger.standard.info("motionchange: Still")
-              listener(
-                buildMotionChangeLocation(loca, isMoving: false))
-              isMoving = false
-            }
-
-            Logger.standard.info("Should Stop Listen")
-            self.switchToMonitor()
+      if let diff = self.refLoca?.timestamp?.timeIntervalSinceNow {
+        if abs(diff) > TIME_TO_STILL && isMoving {
+          self.refLoca = location
+          if distance < Double(config.distanceFilter) {
+            Logger.standard.info("motionchange: Still")
+            listener?(
+              buildMotionChangeLocation(location, isMoving: false))
+            isMoving = false
           }
         }
-      }
 
-      return false
+        let diffPast = abs(self.updateStamp.timeIntervalSinceNow)
+        if abs(diff) > TIME_TO_SLEEP && diffPast > TIME_TO_SLEEP {
+          if isMoving {
+            Logger.standard.info("motionchange: Still")
+            listener?(
+              buildMotionChangeLocation(location, isMoving: false))
+            isMoving = false
+          }
+
+          Logger.standard.info("Should Stop Listen")
+          self.switchToMonitor()
+        }
+      }
+    }
+
+    return false
+  }
+
+  func handleLocation(_ location: CalmGeoCoords?) {
+    if self.monitor.isRunning {
+      return
+    }
+
+    if let stamp = location?.timestamp {
+      Logger.standard.info("Current Location is \(stamp.ISO8601Format())")
+    }
+
+    // Call the listener
+    if let location {
+      if self.isMoving {
+        listener?(buildMovingLocation(location))
+      } else {
+        Logger.standard.info("motionchange: Moving")
+        isMoving = true
+        listener?(
+          buildMotionChangeLocation(location, isMoving: true)
+        )
+      }
     }
   }
 
   func listenToLocation(_ listener: @escaping (_ location: CalmGeoLocation) -> Void) {
     Logger.standard.info("listenToLocation in")
 
-    self.updateTask?.cancel()
+    self.location.stop()
     self.listener = listener
-    self.updateTask = Task {
-      do {
-        if self.monitor == nil {
-          let inner = await CLMonitor(UUID().uuidString.split(separator: "-").joined())
-          monitor = StillMonitorProvider(monitor: inner)
-        }
 
-        self.updateStamp = Date()
-        let updates = startLiveUpdates(listener)
+    self.updateStamp = Date()
 
-        Logger.standard.info("updated")
-
-        for try await update in updates {
-          if self.monitor?.isRunning ?? false {
-            break
-          }
-
-          if let stamp = update.location?.timestamp {
-            Logger.standard.info("Current Location is \(stamp.ISO8601Format())")
-          }
-          Logger.standard.info("\(update.isStationary)")
-
-          // Call the listener
-          if let location = update.location {
-            if self.isMoving {
-              listener(buildMovingLocation(location))
-            } else {
-              Logger.standard.info("motionchange: Moving")
-              isMoving = true
-              listener(
-                buildMotionChangeLocation(location, isMoving: true)
-              )
-            }
-          }
-        }
-      } catch {
-        Logger.standard.info("Some error")
-        debugPrint("Some Error Occured")
-      }
-    }
+    self.location.listenToLocation(self.handleLocation, filter: self.filterLocation)
   }
 
   func stopWatch() {
     Logger.standard.info("Stop Watch \(Date().ISO8601Format())")
-    self.monitor?.stop()
-    self.monitor = nil
+    self.monitor.stop()
   }
 
   func switchToListen() {
@@ -231,11 +187,7 @@ class CalmGeoLocationManager: NSObject, CLLocationManagerDelegate {
 
   func stopListen() {
     Logger.standard.info("Stop Listen \(Date().ISO8601Format())")
-
-    if let _ = self.updateTask {
-      Logger.standard.info("Clear Update")
-      self.updateTask = nil
-    }
+    self.location.stop()
   }
 
   func switchToMonitor() {
@@ -246,31 +198,27 @@ class CalmGeoLocationManager: NSObject, CLLocationManagerDelegate {
   func stop() {
     Logger.standard.info("Stop \(Date().ISO8601Format())")
 
-    self.manager.stopUpdatingLocation()
-
-    self.updateTask?.cancel()
-    self.updateTask = nil
-
+    stopListen()
     stopWatch()
   }
 }
 
 @available(iOS 15.0, *)
-func buildMovingLocation(_ location: CLLocation) -> CalmGeoLocation {
-  let stamp = (location.timestamp as Date?) ?? Date.now
+func buildMovingLocation(_ coords: CalmGeoCoords) -> CalmGeoLocation {
+  let stamp = (coords.timestamp as Date?) ?? Date.now
 
   return CalmGeoLocation(
     id: UUID().uuidString, timestamp: stamp.iso8601Stamp, isMoving: true,
-    coords: CalmGeoCoords(from: location))
+    coords: coords)
 }
 
 @available(iOS 15.0, *)
-func buildMotionChangeLocation(_ location: CLLocation, isMoving: Bool) -> CalmGeoLocation {
-  let stamp = (location.timestamp as Date?) ?? Date.now
+func buildMotionChangeLocation(_ coords: CalmGeoCoords, isMoving: Bool) -> CalmGeoLocation {
+  let stamp = (coords.timestamp as Date?) ?? Date.now
 
   return CalmGeoLocation(
     id: UUID().uuidString, timestamp: stamp.iso8601Stamp, isMoving: isMoving,
-    coords: CalmGeoCoords(from: location), event: CalmGeoLocation.Event.motionchange
+    coords: coords, event: CalmGeoLocation.Event.motionchange
   )
 }
 

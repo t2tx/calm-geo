@@ -6,7 +6,7 @@ class CalmGeoService: CalmGeoServiceType {
   private var _storage: StoreManager?
   private var _backgroundSession: BackgroundSessionProtocol?
   private var _motionManager: MotionManager?
-  
+
   private var _locationManager: CalmGeoLocationManager?
   private var _locationListener: CalmGeoLocationListener?
 
@@ -36,7 +36,13 @@ class CalmGeoService: CalmGeoServiceType {
     if let manager = _locationManager {
       manager.config(config)
     } else {
-      self._locationManager = CalmGeoLocationManager(config: config)
+      Task {
+        let inner = await CLMonitor(UUID().uuidString.split(separator: "-").joined())
+        self._locationManager = CalmGeoLocationManager(
+          config: config,
+          monitor: StillMonitorProvider(monitor: inner),
+          location: LocationProvider(config: config))
+      }
     }
 
     if config.fetchActivity {

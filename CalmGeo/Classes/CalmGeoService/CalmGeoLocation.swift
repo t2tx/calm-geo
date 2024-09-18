@@ -16,6 +16,7 @@ public struct CalmGeoCoords: Codable {
     ellipsoidalAltitude = location.altitude
     mock = location.sourceInformation?.isSimulatedBySoftware
     external = location.sourceInformation?.isProducedByAccessory
+    timestamp = location.timestamp
 
     if let floor = location.floor {
       self.floor = Double(floor.level)
@@ -35,6 +36,12 @@ public struct CalmGeoCoords: Codable {
   public var floor: Double?
   public var mock: Bool?
   public var external: Bool?
+  public var timestamp: Date?
+
+  public func distance(from: CalmGeoCoords) -> Double {
+    return CLLocation(latitude: self.latitude, longitude: self.longitude).distance(
+      from: CLLocation(latitude: from.latitude, longitude: from.longitude))
+  }
 }
 
 public protocol MotionActivity {
