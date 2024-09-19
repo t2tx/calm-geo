@@ -3,47 +3,64 @@ import MMKV
 
 @available(iOS 17.0, *)
 class CalmGeoService: CalmGeoServiceType {
+  private let semaphore = DispatchSemaphore(value: 1)
+
   private var _storage: StoreManager?
+  private var _backgroundSession: BackgroundSessionProtocol?
+  private var _motionManager: MotionManager?
+
   private var _locationManager: CalmGeoLocationManager?
   private var _locationListener: CalmGeoLocationListener?
-  private var _motionManager: MotionManager?
+
   private var _config: CalmGeoConfigType?
 
   init(config: CalmGeoConfigType) {
+    _backgroundSession = BackgroundSession()
     restart(config: config)
   }
 
   func restart(config: CalmGeoConfigType) {
-    _config = config
-    if let _storage {
+    self._config = config
+    if let _storage = self._storage {
       _storage.config = config
     } else {
       MMKV.initialize(rootDir: nil, logLevel: .warning)
       let mmkv = MMKV.init(mmapID: "calmgeo", mode: .singleProcess)
-
+      
       if let mmkv {
         mmkv.enableAutoKeyExpire(expiredInSeconds: MMKVExpireDuration.never.rawValue)
-        _storage = StoreManager(
+        self._storage = StoreManager(
           config: config, network: NetworkManager(),
           storage: MMKVStorageProvider(of: mmkv, config: config))
       }
     }
-
-    if let manager = _locationManager {
+    
+    semaphore.wait()
+    if let manager = self._locationManager {
+      defer {
+        semaphore.signal()
+      }
       manager.config(config)
     } else {
-      self._locationManager = CalmGeoLocationManager(config: config)
+      Task {
+        defer {
+          semaphore.signal()
+        }
+        self._locationManager = CalmGeoLocationManager(
+          config: config,
+          monitor: await StillMonitorProvider(),
+          location: LocationProvider(config: config))
+      }
     }
-
+    
     if config.fetchActivity {
-      if _motionManager == nil {
+      if self._motionManager == nil {
         self._motionManager = MotionManager(provider: MotionProvider())
       }
     } else {
       self._motionManager?.stop()
       self._motionManager = nil
     }
-
     start()
   }
 
