@@ -7,8 +7,8 @@ class StillMonitorProvider: StillMonitorProviderProtocol {
   private var watchTask: Task<Void, Error>?
   private var monitor: CLMonitor
 
-  init(monitor: CLMonitor) {
-    self.monitor = monitor
+  init() async {
+    self.monitor = await CLMonitor(UUID().uuidString.split(separator: "-").joined())
   }
 
   var isRunning: Bool { watchTask != nil }
