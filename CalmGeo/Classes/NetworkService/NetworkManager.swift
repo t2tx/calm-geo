@@ -50,7 +50,6 @@ final class NetworkManager: NetworkManagerProtocol {
     var request = URLRequest(url: url)
 
     request.httpMethod = method.rawValue
-    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
     if let requestHeaders = headers {
       for (field, value) in requestHeaders {
         request.setValue(value, forHTTPHeaderField: field)
