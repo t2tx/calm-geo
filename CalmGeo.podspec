@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'CalmGeo'
-  s.version          = '0.9.6'
+  s.version          = '0.9.13'
   s.summary          = 'A background geolocation log service.'
   s.swift_versions   = ['5.10']
 
@@ -33,5 +33,5 @@ TODO: Add long description of the pod here.
 
   s.source_files = 'CalmGeo/Classes/**/*'
 
-  s.dependency 'MMKV', '1.3.0'
+  s.dependency 'MMKV', '~> 1.3.0'
 end
