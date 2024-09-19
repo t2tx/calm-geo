@@ -1,6 +1,6 @@
 PODS:
-  - CalmGeo (0.9.7):
-    - MMKV (= 1.3.0)
+  - CalmGeo (0.9.8):
+    - MMKV (~> 1.3.0)
   - MMKV (1.3.0):
     - MMKVCore (~> 1.3.0)
   - MMKVCore (1.3.9)
@@ -18,7 +18,7 @@ EXTERNAL SOURCES:
     :path: "../"
 
 SPEC CHECKSUMS:
-  CalmGeo: 9e0506ddbe48a0e4ed563a39ffa566dd07355459
+  CalmGeo: 77f26a57ed48a54051e9feadf37aa359d04efe65
   MMKV: 9c6c3fa4ddd849f28c7b9a5c9d23aab84f14ee35
   MMKVCore: af055b00e27d88cd92fad301c5fecd1ff9b26dd9
 
