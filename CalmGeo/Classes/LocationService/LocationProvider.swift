@@ -2,6 +2,8 @@ import CoreLocation
 import Foundation
 import os
 
+let TIME_TO_EXPIRE = 30.0
+
 @available(iOS 17.0, *)
 class LocationProvider: NSObject, LocationProviderProtocol, CLLocationManagerDelegate {
   private var manager: CLLocationManager
@@ -37,15 +39,17 @@ class LocationProvider: NSObject, LocationProviderProtocol, CLLocationManagerDel
   }
 
   var currentLocation: CalmGeoCoords? {
-    if let location = manager.location {
-      if let listener {
-        listener(CalmGeoCoords(from: location))
+    if let location = (manager.location ?? refLoca) {
+      Logger.standard.debug("currentLocation: has")
+      if location.timestamp.timeIntervalSinceNow > -TIME_TO_EXPIRE {
+        Logger.standard.debug("currentLocation: fresh")
+        if let listener {
+          listener(CalmGeoCoords(from: location))
+        }
+        return CalmGeoCoords(from: location)
       }
-      return CalmGeoCoords(from: location)
-    } else {
-      manager.requestLocation()
     }
-
+    manager.requestLocation()
     return nil
   }
 
