@@ -44,26 +44,26 @@ class CalmGeoService: CalmGeoServiceType {
       self._motionManager = nil
     }
 
-    _lock.lock()
     if let manager = self._locationManager {
-      defer {
-        _lock.unlock()
-      }
       manager.config(config)
       start()
     } else {
+      self._lock.lock()
       Task {
         let monitor = await StillMonitorProvider()
         await MainActor.run {
           defer {
             _lock.unlock()
           }
+          if let _ = self._locationManager {
+            return
+          }
           self._locationManager = CalmGeoLocationManager(
             config: config,
             monitor: monitor,
             location: LocationProvider(config: config))
+          start()
         }
-        self.start()
       }
     }
   }
@@ -107,6 +107,9 @@ class CalmGeoService: CalmGeoServiceType {
     }
 
     if let manager = self._locationManager {
+      if manager.isRunning {
+        return
+      }
 
       manager.requestWhenInUseAuthorization()
 

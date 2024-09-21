@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'CalmGeo'
-  s.version          = '0.9.10'
+  s.version          = '0.9.11'
   s.summary          = 'A background geolocation log service.'
   s.swift_versions   = ['5.10']
 
