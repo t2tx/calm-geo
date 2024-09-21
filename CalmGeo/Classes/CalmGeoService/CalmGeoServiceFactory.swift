@@ -1,6 +1,7 @@
 @available(iOS 17.0, *)
+@MainActor
 class CalmGeoServiceFactory: CalmGeoServiceFactoryType {
-  static func createGeoService(config: CalmGeoConfigType?) -> CalmGeoServiceType {
+  nonisolated static func createGeoService(config: CalmGeoConfigType?) -> CalmGeoServiceType {
     return CalmGeoService(config: config ?? CalmGeoConfig.standard)
   }
 }

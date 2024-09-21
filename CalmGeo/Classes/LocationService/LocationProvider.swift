@@ -5,7 +5,6 @@ import os
 @available(iOS 17.0, *)
 class LocationProvider: NSObject, LocationProviderProtocol, CLLocationManagerDelegate {
   private var manager: CLLocationManager
-
   private var updateTask: Task<Void, Error>?
   private var updateStamp: Date = Date()
 
