@@ -4,7 +4,7 @@ import os
 
 @available(iOS 17.0, *)
 class LocationProvider: NSObject, LocationProviderProtocol, CLLocationManagerDelegate {
-  private var manager: CLLocationManager = CLLocationManager()
+  private var manager: CLLocationManager
 
   private var updateTask: Task<Void, Error>?
   private var updateStamp: Date = Date()
@@ -15,6 +15,7 @@ class LocationProvider: NSObject, LocationProviderProtocol, CLLocationManagerDel
   private var config: CalmGeoLocationConfigType
 
   init(config: CalmGeoLocationConfigType) {
+    self.manager = CLLocationManager()
     self.config = config
     super.init()
     self.config(config)
@@ -40,7 +41,10 @@ class LocationProvider: NSObject, LocationProviderProtocol, CLLocationManagerDel
         listener(CalmGeoCoords(from: location))
       }
       return CalmGeoCoords(from: location)
+    } else {
+      manager.requestLocation()
     }
+
     return nil
   }
 
@@ -57,6 +61,26 @@ class LocationProvider: NSObject, LocationProviderProtocol, CLLocationManagerDel
     default:
       break
     }
+  }
+
+  func locationManager(
+    _ manager: CLLocationManager,
+    didUpdateLocations locations: [CLLocation]
+  ) {
+    Logger.standard.info("didUpdateLocations")
+    if let location = locations.last {
+      refLoca = location
+      if let listener {
+        listener(CalmGeoCoords(from: location))
+      }
+    }
+  }
+
+  func locationManager(
+    _ manager: CLLocationManager,
+    didFailWithError error: any Error
+  ) {
+    Logger.standard.info("didFailWithError \(error.localizedDescription)")
   }
 
   @available(iOS 17.0, *)
@@ -85,6 +109,7 @@ class LocationProvider: NSObject, LocationProviderProtocol, CLLocationManagerDel
 
   func listenToLocation(_ listener: @escaping LocationListener, filter: LocationFilter?) {
     Logger.standard.info("listenToLocation in")
+    manager.requestLocation()
 
     self.updateTask?.cancel()
     self.listener = listener

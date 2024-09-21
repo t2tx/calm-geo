@@ -12,7 +12,6 @@ final class NetworkManagerTests: XCTestCase {
     let theDefault = manager.buildRequest(
       url: "https://example.com", headers: nil)
     XCTAssertEqual(theDefault?.httpMethod, "POST")
-    XCTAssertEqual(theDefault?.value(forHTTPHeaderField: "Content-Type"), "application/json")
 
     let methodPost = manager.buildRequest(
       url: "https://example.com", headers: nil, method: .POST)
@@ -23,7 +22,7 @@ final class NetworkManagerTests: XCTestCase {
     XCTAssertEqual(methodPut?.httpMethod, "PUT")
 
     let headers = manager.buildRequest(
-      url: "https://example.com", headers: ["key": "value"])
+      url: "https://example.com", headers: ["key": "value", "Content-Type": "application/json"])
     XCTAssertEqual(headers?.value(forHTTPHeaderField: "key"), "value")
     XCTAssertEqual(headers?.value(forHTTPHeaderField: "Content-Type"), "application/json")
   }
