@@ -14,6 +14,8 @@ class LocationProvider: NSObject, LocationProviderProtocol, CLLocationManagerDel
   private var config: CalmGeoLocationConfigType
 
   init(config: CalmGeoLocationConfigType) {
+    print("Main thread: \(Thread.isMainThread ? "YES" : "NO")")
+
     self.manager = CLLocationManager()
     self.config = config
     super.init()

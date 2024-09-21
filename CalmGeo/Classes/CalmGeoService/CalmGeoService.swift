@@ -3,7 +3,7 @@ import MMKV
 
 @available(iOS 17.0, *)
 class CalmGeoService: CalmGeoServiceType {
-  private let semaphore = DispatchSemaphore(value: 1)
+  private let _lock = NSRecursiveLock()
 
   private var _storage: StoreManager?
   private var _backgroundSession: BackgroundSessionProtocol?
@@ -26,7 +26,7 @@ class CalmGeoService: CalmGeoServiceType {
     } else {
       MMKV.initialize(rootDir: nil, logLevel: .warning)
       let mmkv = MMKV.init(mmapID: "calmgeo", mode: .singleProcess)
-      
+
       if let mmkv {
         mmkv.enableAutoKeyExpire(expiredInSeconds: MMKVExpireDuration.never.rawValue)
         self._storage = StoreManager(
@@ -34,25 +34,7 @@ class CalmGeoService: CalmGeoServiceType {
           storage: MMKVStorageProvider(of: mmkv, config: config))
       }
     }
-    
-    semaphore.wait()
-    if let manager = self._locationManager {
-      defer {
-        semaphore.signal()
-      }
-      manager.config(config)
-    } else {
-      Task {
-        defer {
-          semaphore.signal()
-        }
-        self._locationManager = CalmGeoLocationManager(
-          config: config,
-          monitor: await StillMonitorProvider(),
-          location: LocationProvider(config: config))
-      }
-    }
-    
+
     if config.fetchActivity {
       if self._motionManager == nil {
         self._motionManager = MotionManager(provider: MotionProvider())
@@ -61,7 +43,29 @@ class CalmGeoService: CalmGeoServiceType {
       self._motionManager?.stop()
       self._motionManager = nil
     }
-    start()
+
+    _lock.lock()
+    if let manager = self._locationManager {
+      defer {
+        _lock.unlock()
+      }
+      manager.config(config)
+      start()
+    } else {
+      Task {
+        let monitor = await StillMonitorProvider()
+        await MainActor.run {
+          defer {
+            _lock.unlock()
+          }
+          self._locationManager = CalmGeoLocationManager(
+            config: config,
+            monitor: monitor,
+            location: LocationProvider(config: config))
+        }
+        self.start()
+      }
+    }
   }
 
   func getGeoData() -> CalmGeoLocation? {
