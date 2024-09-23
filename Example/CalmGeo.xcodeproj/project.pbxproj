@@ -45,7 +45,7 @@
 		142F0AD978FCDD3615E6DEC8 /* Pods_CalmGeo_Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_CalmGeo_Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		185DDA051DEE99D292A0A228 /* Pods-CalmGeo_Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CalmGeo_Tests.release.xcconfig"; path = "Target Support Files/Pods-CalmGeo_Tests/Pods-CalmGeo_Tests.release.xcconfig"; sourceTree = "<group>"; };
 		2A4994D38A64B8AB260904FC /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
-		52884E5B8C96163F86886E45 /* CalmGeo.podspec */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = CalmGeo.podspec; path = ../CalmGeo.podspec; sourceTree = "<group>"; };
+		52884E5B8C96163F86886E45 /* CalmGeo.podspec */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = CalmGeo.podspec; path = ../CalmGeo.podspec; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
 		607FACD01AFB9204008FA782 /* CalmGeo_Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CalmGeo_Example.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		607FACD41AFB9204008FA782 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		607FACDA1AFB9204008FA782 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
